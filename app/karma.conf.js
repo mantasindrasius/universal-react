@@ -10,7 +10,9 @@ module.exports = function(config) {
     plugins : [
        'karma-mocha',
        'karma-chai',
-       'karma-chrome-launcher'
+       'karma-chrome-launcher',
+       'karma-jsx',
+       'karma-webpack'
     ],
 
     // frameworks to use
@@ -20,7 +22,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/karma/**.it.js'
+      'tests.webpack.js',
+      'test/karma/**.it.jsx'
     ],
 
 
@@ -32,6 +35,8 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+      'tests.webpack.js': ['webpack'],
+      '**/*.jsx': ['webpack']
     },
 
 
@@ -69,6 +74,20 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultaneous
-    concurrency: Infinity
+    concurrency: Infinity,
+
+    webpack: {
+      module: {
+        loaders: [
+            {
+              test: /\.jsx?$/, exclude: /node_modules/, loader: 'babel-loader'
+            }
+        ]
+      },
+      watch: true
+    },
+    webpackServer: {
+        noInfo: true
+    }
   })
 }
