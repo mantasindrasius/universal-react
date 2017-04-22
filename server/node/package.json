@@ -21,6 +21,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js"
+    "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js",
+    "test": "npm run e2e"
   }
 }
