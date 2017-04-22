@@ -4,7 +4,7 @@
   "main": "index.js",
   "repository": "https://github.com/mantasindrasius/universal-react",
   "author": "Mantas Indrašius <mantas@indrasius.lt>",
-  "license": "GPL",
+  "license": "GPL-3.0",
   "dependencies": {
     "babel-register": "^6.24.1",
     "chai": "^3.5.0",
@@ -21,7 +21,6 @@
   },
   "scripts": {
     "start": "node index.js",
-    "transpile": "babel views/ -d build/",
     "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js"
   }
 }
