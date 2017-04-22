@@ -11,7 +11,7 @@ module.exports = function(config) {
        'karma-mocha',
        'karma-chai',
        'karma-chrome-launcher',
-       'karma-jsx',
+       'karma-phantomjs-launcher',
        'karma-webpack'
     ],
 
@@ -80,7 +80,10 @@ module.exports = function(config) {
       module: {
         loaders: [
             {
-              test: /\.jsx?$/, exclude: /node_modules/, loader: 'babel-loader'
+              test: /\.jsx?$/, exclude: /node_modules/, loader: 'babel-loader',
+               query: {
+                presets: ['es2015']        
+              }
             }
         ]
       },
