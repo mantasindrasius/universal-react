@@ -6,14 +6,22 @@
   "author": "Mantas Indrašius <mantas@indrasius.lt>",
   "license": "GPL",
   "dependencies": {
+    "babel-register": "^6.24.1",
     "chai": "^3.5.0",
     "express": "^4.15.2",
-    "node-fetch": "^1.6.3"
+    "express-react-views": "^0.10.2",
+    "node-fetch": "^1.6.3",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4"
   },
   "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
     "mocha": "^3.2.0"
   },
   "scripts": {
+    "start": "node index.js",
+    "transpile": "babel views/ -d build/",
     "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js"
   }
 }

@@ -29,7 +29,7 @@ describe('Slides', function() {
   it('should run through slides', async() => {
     driver.get(`${serverUrl}/hello`);
     
-    let element = await driver.findElement(By.id('welcome'));
+    let element = await driver.findElement(By.id('welcome-message'));
     let welcomeMessage = await element.getText();
     
     return expect(welcomeMessage).to.equal('Welcome!');
