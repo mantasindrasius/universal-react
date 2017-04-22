@@ -1,0 +1,19 @@
+{
+  "name": "universal-react-node-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/mantasindrasius/universal-react",
+  "author": "Mantas Indrašius <mantas@indrasius.lt>",
+  "license": "GPL",
+  "dependencies": {
+    "chai": "^3.5.0",
+    "express": "^4.15.2",
+    "node-fetch": "^1.6.3"
+  },
+  "devDependencies": {
+    "mocha": "^3.2.0"
+  },
+  "scripts": {
+    "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js"
+  }
+}
