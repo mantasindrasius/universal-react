@@ -1,0 +1,3 @@
+script:
+- cd app && npm test
+
