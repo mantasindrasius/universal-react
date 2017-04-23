@@ -6,6 +6,4 @@ jdk:
 before_install:
   - npm install -g yarn
   - java -version
-script:
-  - jdk_switcher use oraclejdk8
-  - bash build.sh
+script: bash build.sh
