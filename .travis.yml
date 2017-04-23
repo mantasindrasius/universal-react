@@ -1,8 +1,8 @@
-language: java node_js
-node_js:
-  - "7.9.0"
+language: java
 jdk:
   - oraclejdk8
+node_js:
+  - "7.9.0"
 before_install:
   - npm install -g yarn
   - java -version
