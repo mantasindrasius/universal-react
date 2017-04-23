@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
-    "compile": "mkdir -p target/classes && java -Xbootclasspath/a:`./bin/coursier fetch -r https://oss.sonatype.org/content/repositories/releases -r http://dl.bintray.com/scalaz/releases org.scala-lang:scala-compiler:2.12.2 | awk '{print}' ORS=':'` scala.tools.nsc.Main -d target/classes -cp `./bin/coursier fetch -r https://oss.sonatype.org/content/repositories/releases -r http://dl.bintray.com/scalaz/releases org.specs2:specs2-core_2.12:3.8.9 | awk '{print}' ORS=':'` src/**",
+    "build": "mkdir -p target/classes && java -Xbootclasspath/a:`./bin/coursier fetch -r https://oss.sonatype.org/content/repositories/releases -r http://dl.bintray.com/scalaz/releases org.scala-lang:scala-compiler:2.12.2 | awk '{print}' ORS=':'` scala.tools.nsc.Main -d target/classes -cp `./bin/coursier fetch -r https://oss.sonatype.org/content/repositories/releases -r http://dl.bintray.com/scalaz/releases org.specs2:specs2-core_2.12:3.8.9 | awk '{print}' ORS=':'` src/**",
     "test": "java -Dfilesrunner.basepath=src -cp `./bin/coursier fetch -r https://oss.sonatype.org/content/repositories/releases -r http://dl.bintray.com/scalaz/releases org.specs2:specs2-core_2.12:3.8.9 | awk '{print}' ORS=':'`target/classes org.specs2.runner.files .*Spec"
   }
 }

@@ -3,4 +3,4 @@ node_js:
   - "7.9.0"
 before_install:
   - npm install -g yarn
-script: make test
+script: bash build.sh
