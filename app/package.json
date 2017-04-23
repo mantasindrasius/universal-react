@@ -12,10 +12,9 @@
   "scripts": {
     "karma": "karma start --single-run",
     "karma-start": "karma start karma.conf.js",
-    "jest": "jest",
     "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js",
-    "test": "npm run jest && npm run karma && npm run e2e",
-    "headless": "npm run jest"
+    "test": "jest",
+    "alltest": "jest && npm run karma && npm run e2e"
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
