@@ -2,34 +2,59 @@ package lt.indrasius.react
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import javax.script.{ScriptEngine, ScriptEngineManager}
+import javax.script.{ScriptContext, ScriptEngine, ScriptEngineManager, SimpleScriptContext}
+import jdk.nashorn.api.scripting.{NashornScriptEngineFactory, ScriptObjectMirror}
+import io.Source
 
 class HelloSpec extends Specification {
+  sequential
+
+  val nashornScriptEngineFactory = new NashornScriptEngineFactory()
+  lazy val nashorn = {
+      val engine = nashornScriptEngineFactory.getScriptEngine("--language=es6")
+      engine.loadScript("classpath:jvm-npm.js")
+      engine.loadScript("node_modules/nashorn-polyfill/dist/nashorn-polyfill.js")
+      engine.require("babel-standalone")
+
+      engine
+  }
+
   class Context extends Scope {
   }
 
   "Hello" should {
     "should pass" in new Context {
-      val scriptEngineManager = new ScriptEngineManager()
-      val nashorn = scriptEngineManager.getEngineByName("nashorn")
+      nashorn.loadScriptWithTranspile("../../app/views/index.jsx")
 
-      nashorn.loadScript("node_modules/nashorn-polyfill/dist/nashorn-polyfill.js")
-      nashorn.loadScript("node_modules/react/dist/react.js")
-      nashorn.loadScript("node_modules/react-dom/dist/react-dom-server.js")
-      nashorn.loadScript("../../app/views/index.js")
-
-      nashorn.eval("ReactDOMServer.renderToStaticMarkup(React.createElement(HelloMessage, { welcomeMessage: \"Welcome\" }))").toString() must
+      nashorn.eval("var ReactDOMServer = require('react-dom/server'); var React = require('react'); ReactDOMServer.renderToStaticMarkup(React.createElement(HelloMessage, { welcomeMessage: \"Welcome\" }))").toString() must
         contain("Welcome!");
     }
   }
 
   implicit class `Extended Nashorn`(engine: ScriptEngine) {
+    private val JSON = engine.get("JSON").asInstanceOf[ScriptObjectMirror]
+
     def loadResourceScript(name: String) = {
       loadScript(getClass.getClassLoader.getResource(s"${name}.js").toURI.getPath)
     }
     
     def loadScript(fullPath: String) = {
       engine.eval(s"load('$fullPath')")
+    }
+
+    def loadScriptWithTranspile(fullPath: String) = {
+      val source = Source.fromFile(fullPath).mkString
+
+      engine.put("sourceForTranspile", source);
+
+      val transpiledSource = engine.eval("var Babel = require('babel-standalone'); Babel.transform(sourceForTranspile, { presets: ['react', 'es2015'] }).code");
+      val escapedSource = JSON.callMember("stringify", transpiledSource).toString()
+
+      engine.eval(s"""load({script:$escapedSource,name:"$fullPath"})""")
+    }
+    
+    def require(name: String) = {
+      engine.eval(s"require('$name')")
     }
   }
 }

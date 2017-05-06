@@ -8,10 +8,12 @@
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
     "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist",
-    "test": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 src/**",
+    "test": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 src/**",
     "watch": "watchman src/ \"yarn test\""
   },
   "dependencies": {
+    "babel-register": "^6.24.1",
+    "babel-standalone": "^6.24.0",
     "nashorn-polyfill": "^0.2.4",
     "react": "^15.5.4",
     "react-dom": "^15.5.4"

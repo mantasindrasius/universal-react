@@ -13,12 +13,14 @@ function execution(args) {
   const specs2Artifact = args['with-specs2'] ? `org.specs2:specs2-core_${scalaDepSuffix}:${args['with-specs2']}` : '';
 
   const sources = args['_'] || [];
+  const depArgs = args['d'];
+  const userDeps = ((depArgs && typeof(depArgs) === 'string') ? [depArgs] : depArgs) || [];
 
   return {
-    compile: () => compile()
+    compile: () => compile(userDeps)
   }
 
-  async function compile() {
+  async function compile(deps) {
     const compileDepArtifacts = [
       `org.scala-lang:scala-compiler:${scalaVersion}`,
       `io.get-coursier:coursier_${scalaDepSuffix}:1.0.0-RC1`,
@@ -27,6 +29,10 @@ function execution(args) {
     if (specs2Artifact) {
       compileDepArtifacts.push(specs2Artifact);
     }
+
+    deps.map((dep) => {
+      compileDepArtifacts.push(dep);
+    });
 
     const compileDeps = await fetchDeps({
       artifacts: compileDepArtifacts
@@ -41,7 +47,7 @@ function execution(args) {
 
   async function runTests() {
     const deps = await fetchDeps({
-      artifacts: [specs2Artifact]
+      artifacts: userDeps.concat([specs2Artifact])
     });
 
     const args = ['-Dfilesrunner.basepath=src', '-cp', deps.concat('target/classes').join(':')]
@@ -113,4 +119,4 @@ function execution(args) {
 
 execution(require('minimist')(process.argv.slice(2)))
   .compile()
-  .catch((error) => console.error('Error:', error.name));
+  .catch((error) => console.error('Error:', error));
