@@ -7,11 +7,21 @@
   "license": "GPL-3.0",
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
+    "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist",
     "test": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 src/**",
-    "watch": "watchman src/ \"yarn build && yarn test\""
+    "watch": "watchman src/ \"yarn test\""
+  },
+  "dependencies": {
+    "nashorn-polyfill": "^0.2.4",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4"
   },
   "devDependencies": {
     "child-process-promise": "^2.2.1",
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-exec": "^2.1.3",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "watchman": "^0.1.8"

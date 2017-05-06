@@ -47,7 +47,7 @@ function execution(args) {
     const args = ['-Dfilesrunner.basepath=src', '-cp', deps.concat('target/classes').join(':')]
       .concat(['org.specs2.runner.files', '.*Spec']);
 
-    await execute('java', args);
+    await withExecutionTime('Tests', () => execute('java', args));
   }
 
   async function fetchDeps({ artifacts }) {
@@ -66,6 +66,11 @@ function execution(args) {
   }
 
   function executeWithOutput(command, args, onOutput) {
+    const start = new Date().getTime();
+    const commandWithArgs = args.slice();
+
+    commandWithArgs.unshift(command);
+
     const promise = spawn(command, args, { stdout: 'pipe' });
 
     const stdout = promise.childProcess.stdout;
@@ -76,21 +81,21 @@ function execution(args) {
 
     const processExitPromise = new Promise((fulfill, reject) => {
       try {
-        promise.childProcess.on('exit', () => fulfill());
+        promise.childProcess.on('exit', () => completeWith(commandWithArgs, start, () => fulfill()));
+        promise.childProcess.on('error', (e) => completeWith(commandWithArgs, start, () => reject(e)));
       } catch (e) {
         reject(e);
       }
     });
 
     return promise.then(() => processExitPromise);
+  }
 
-    // return promise.then(() => new Promise((fulfill, reject) => {
-    //   try {
-    //     promise.childProcess.on('exit', () => fulfill());
-    //   } catch (e) {
-    //     reject(e);
-    //   }
-    // }));
+  function completeWith(command, startTime, fn) {
+    const execTime = new Date().getTime() - startTime;
+    //console.log(`Done in ${execTime}ms`, command.join(' '));
+
+    fn();
   }
 
   async function withExecutionTime(name, fn) {
@@ -108,4 +113,4 @@ function execution(args) {
 
 execution(require('minimist')(process.argv.slice(2)))
   .compile()
-  .catch((error) => console.error(error));
+  .catch((error) => console.error('Error:', error.name));

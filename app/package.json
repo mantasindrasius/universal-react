@@ -14,9 +14,11 @@
     "karma-start": "karma start karma.conf.js",
     "e2e": "mocha --timeout=10000 test/e2e/*.e2e.js",
     "test": "jest",
-    "alltest": "jest && npm run karma && npm run e2e"
+    "alltest": "jest && npm run karma && npm run e2e",
+    "build": "babel views/index.jsx --out-file views/index.js --presets=es2015"
   },
   "devDependencies": {
+    "babel-cli": "^6.24.1",
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",
     "babel-plugin-transform-react-jsx": "^6.24.1",
