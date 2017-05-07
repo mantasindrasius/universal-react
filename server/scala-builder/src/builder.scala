@@ -43,7 +43,7 @@ class ScalaBuilder(deps: String*) {
 
     //compileWithInterpreter(sourceRootFile, sourceFiles, outputDirFile)
     compileWithCompiler(sourceRootFile, outputDirFile)
-    //runTests(outputDirFile)
+    runTests(sourceRootFile, outputDirFile)
   }
 
   private def compileWithInterpreter(sourceRootFile: File, sourceFiles: Seq[SourceFile], outputDirFile: File): Unit = {
@@ -69,7 +69,7 @@ class ScalaBuilder(deps: String*) {
     compiler.process(Array("-usejavacp", "-d", outputDirFile.getAbsolutePath, sourceRootFile + "/GreeterSpec.scala"))
   }
 
-  private def runTests(targetClassesFile: File): Unit = {
+  private def runTests(sourcesFile: File, targetClassesFile: File): Unit = {
     val currentThread = java.lang.Thread.currentThread()
     val currentClassLoader = currentThread.getContextClassLoader
 
@@ -77,7 +77,7 @@ class ScalaBuilder(deps: String*) {
 
     currentThread.setContextClassLoader(testsClassLoader)
 
-    try org.specs2.runner.files.main(Array(".*Spec"))
+    try org.specs2.runner.files.run(Array("filesrunner.basepath", sourcesFile.getAbsolutePath, ".*Spec"), exit = false)
     finally currentThread.setContextClassLoader(currentClassLoader)
   }
 
