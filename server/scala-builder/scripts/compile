@@ -4,6 +4,8 @@
 
 const mkdirp = require('mkdirp');
 const spawn = require('child-process-promise').spawn;
+const fs = require('fs-extra');
+const path = require('path');
 
 mkdirp.sync('target/classes');
 
@@ -35,11 +37,11 @@ function execution(args) {
   }
 
   async function compile() {
-    compileClasspath = await fetchDeps({
+    compileClasspath = await fetchBundleDeps('compile', {
       artifacts: compileDepArtifacts
     });
 
-    userClasspath = await fetchDeps({
+    userClasspath = await fetchBundleDeps('user', {
       artifacts: userDeps
     });
 
@@ -66,6 +68,36 @@ function execution(args) {
   function bootClasspathFor(items) {
     return `-Xbootclasspath/a:${items.join(':')}`;
   }
+  
+  async function fetchBundleDeps(name, { artifacts }) {
+    const libsDir = `target/deps/${name}`;
+
+    //if (fs.existsSync(libsDir)) {
+    //  return [libsDir];
+    //}
+
+    const deps = await fetchDeps({ artifacts });
+
+    mkdirp.sync(libsDir);
+
+    return await copyFilesTo(deps, libsDir);
+  }
+
+  function copyFilesTo(files, target) {
+    return Promise.all(files.map(async(file) => copyFileTo(file, target)));
+  }
+
+  async function copyFileTo(file, target) {
+    const targetName = path.join(target, path.basename(file));
+
+    if (verbose) {
+      console.log('Copy', targetName);
+    }
+
+    await fs.copy(file, targetName);
+
+    return targetName;
+  }
 
   async function fetchDeps({ artifacts }) {
     const command = ['fetch', '-r', 'https://oss.sonatype.org/content/repositories/releases', '-r', 'http://dl.bintray.com/scalaz/releases'].concat(artifacts);
@@ -75,7 +107,7 @@ function execution(args) {
       collectedDeps.push(data.toString());
     });
 
-    const deps = collectedDeps.join().trim().split('\n');
+    const deps = collectedDeps.join('').trim().split('\n');
 
     return deps.length === 1 && deps[0] === '' ? [] : deps;
   }

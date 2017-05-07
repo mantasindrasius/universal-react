@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
-    "build": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 -d com.github.scopt:scopt_2.12:3.5.0 src/**",
+    "build": "./scripts/compile --verbose --scala=2.12.2 --with-specs2=3.8.9 -d com.github.scopt:scopt_2.12:3.5.0 src/**",
     "watch": "watchman src \"yarn build\""
   },
   "bin": {
@@ -16,5 +16,8 @@
   "devDependencies": {
     "child-process-promise": "^2.2.1",
     "mkdirp": "^0.5.1"
+  },
+  "dependencies": {
+    "fs-extra": "^3.0.1"
   }
 }
