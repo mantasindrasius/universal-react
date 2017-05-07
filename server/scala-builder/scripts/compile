@@ -71,16 +71,34 @@ function execution(args) {
   
   async function fetchBundleDeps(name, { artifacts }) {
     const libsDir = `target/deps/${name}`;
+    const libsIndex = `${libsDir}/libs.json`;
 
-    //if (fs.existsSync(libsDir)) {
-    //  return [libsDir];
-    //}
+    if (fs.existsSync(libsIndex)) {
+      return getFilesFromIndex(libsIndex);
+    }
 
     const deps = await fetchDeps({ artifacts });
 
     mkdirp.sync(libsDir);
 
-    return await copyFilesTo(deps, libsDir);
+    const libs = await copyFilesTo(deps, libsDir);
+
+    writeIndexFile(libsIndex, artifacts, libs);
+
+    return libs;
+  }
+
+  function writeIndexFile(indexPath, artifacts, libs) {
+    return fs.writeJson(indexPath, {
+      dependencies: artifacts,
+      resolvedFiles: libs
+    });
+  }
+
+  async function getFilesFromIndex(indexPath) {
+    const libsIndex = await fs.readJson(indexPath);
+
+    return libsIndex.resolvedFiles;
   }
 
   function copyFilesTo(files, target) {
