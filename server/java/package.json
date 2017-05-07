@@ -7,9 +7,11 @@
   "license": "GPL-3.0",
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
-    "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist",
+    "build-builder": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 builder/**",
+    "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist && ./scripts/compile --scala=2.12.2 builder/**",
     "test": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 src/**",
-    "watch": "watchman src/ \"yarn test\""
+    "watch-builder": "watchman builder \"yarn build-builder\"",
+    "watch": "watchman src \"yarn test\""
   },
   "dependencies": {
     "babel-register": "^6.24.1",

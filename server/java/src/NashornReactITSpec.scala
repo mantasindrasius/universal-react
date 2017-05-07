@@ -6,7 +6,7 @@ import javax.script.{ScriptContext, ScriptEngine, ScriptEngineManager, SimpleScr
 import jdk.nashorn.api.scripting.{NashornScriptEngineFactory, ScriptObjectMirror}
 import io.Source
 
-class HelloSpec extends Specification {
+class NashornReactITSpec extends Specification {
   sequential
 
   val nashornScriptEngineFactory = new NashornScriptEngineFactory()
@@ -22,9 +22,9 @@ class HelloSpec extends Specification {
   class Context extends Scope {
   }
 
-  "Hello" should {
-    "should pass" in new Context {
-      nashorn.loadScriptWithTranspile("../../app/views/index.jsx")
+  "React on Nashorn" should {
+    "should render" in new Context {
+      nashorn.loadTranspiledScript("../../app/views/index.jsx")
 
       nashorn.eval("var ReactDOMServer = require('react-dom/server'); var React = require('react'); ReactDOMServer.renderToStaticMarkup(React.createElement(HelloMessage, { welcomeMessage: \"Welcome\" }))").toString() must
         contain("Welcome!");
@@ -42,7 +42,7 @@ class HelloSpec extends Specification {
       engine.eval(s"load('$fullPath')")
     }
 
-    def loadScriptWithTranspile(fullPath: String) = {
+    def loadTranspiledScript(fullPath: String) = {
       val source = Source.fromFile(fullPath).mkString
 
       engine.put("sourceForTranspile", source);

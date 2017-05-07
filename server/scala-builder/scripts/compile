@@ -1,0 +1,138 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const mkdirp = require('mkdirp');
+const spawn = require('child-process-promise').spawn;
+
+mkdirp.sync('target/classes');
+
+function execution(args) {
+  const scalaVersion = args.scala || '2.12.2';
+  const scalaDepSuffix = scalaVersion.split('.').slice(0, 2).join('.');
+  const specs2Artifact = args['with-specs2'] ? `org.specs2:specs2-core_${scalaDepSuffix}:${args['with-specs2']}` : '';
+
+  const sources = args['_'] || [];
+  const depArgs = args['d'];
+  const verbose = args['verbose'];
+  const compiler = args['compiler'];
+  const userDeps = ((depArgs && typeof(depArgs) === 'string') ? [depArgs] : depArgs) || [];
+  const compileDepArtifacts = [
+    `org.scala-lang:scala-compiler:${scalaVersion}`];
+
+  var compileClasspath, userClasspath;
+
+  userDeps.push(`io.get-coursier:coursier_${scalaDepSuffix}:1.0.0-RC1`);
+  userDeps.push(`io.get-coursier:coursier-cache_${scalaDepSuffix}:1.0.0-RC1`);
+
+  if (specs2Artifact) {
+    userDeps.push(specs2Artifact);
+  }
+
+  return {
+    compile: () => compile(userDeps)
+      .catch((error) => console.error('Error:', verbose ? error : error.name))
+  }
+
+  async function compile() {
+    compileClasspath = await fetchDeps({
+      artifacts: compileDepArtifacts
+    });
+
+    userClasspath = await fetchDeps({
+      artifacts: userDeps
+    });
+
+    const commandArgs = [bootClasspathFor(compileClasspath.concat(userClasspath)), 'scala.tools.nsc.Main', '-d', 'target/classes']
+      .concat(sources);
+    
+    await withExecutionTime('Compilation', () => execute('java', commandArgs));
+    await runTests();
+  }
+
+  async function runTests() {
+    const classpath = userClasspath.concat(['target/classes']);
+
+    if (verbose) {
+      console.log(classpath);
+    }
+
+    const args = ['-Dfilesrunner.basepath=src', bootClasspathFor(compileClasspath), '-cp', classpath.join(':')]
+      .concat(['org.specs2.runner.files', '.*Spec']);
+
+    await withExecutionTime('Tests', () => execute('java', args));
+  }
+
+  function bootClasspathFor(items) {
+    return `-Xbootclasspath/a:${items.join(':')}`;
+  }
+
+  async function fetchDeps({ artifacts }) {
+    const command = ['fetch', '-r', 'https://oss.sonatype.org/content/repositories/releases', '-r', 'http://dl.bintray.com/scalaz/releases'].concat(artifacts);
+    const collectedDeps = [];
+    
+    await executeWithOutput('./bin/coursier', command, (data) => {
+      collectedDeps.push(data.toString());
+    });
+
+    const deps = collectedDeps.join().trim().split('\n');
+
+    return deps.length === 1 && deps[0] === '' ? [] : deps;
+  }
+
+  function execute(command, args, onOutput) {
+    return executeWithOutput(command, args, (data) => process.stdout.write(data));
+  }
+
+  function executeWithOutput(command, args, onOutput) {
+    const start = new Date().getTime();
+    const commandWithArgs = args.slice();
+
+    commandWithArgs.unshift(command);
+
+    if (verbose) {
+      console.log(command, args.join(' '));
+    }
+
+    const promise = spawn(command, args, { stdout: 'pipe' });
+
+    const stdout = promise.childProcess.stdout;
+    const stderr = promise.childProcess.stderr;
+
+    stdout.on('data', onOutput);
+    stderr.on('data', (data) => process.stderr.write(data));
+
+    const processExitPromise = new Promise((fulfill, reject) => {
+      try {
+        promise.childProcess.on('exit', () => completeWith(commandWithArgs, start, () => fulfill()));
+        promise.childProcess.on('error', (e) => completeWith(commandWithArgs, start, () => reject(e)));
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    return promise.then(() => processExitPromise);
+  }
+
+  function completeWith(command, startTime, fn) {
+    const execTime = new Date().getTime() - startTime;
+    //console.log(`Done in ${execTime}ms`, command.join(' '));
+
+    fn();
+  }
+
+  async function withExecutionTime(name, fn) {
+    const start = new Date().getTime();
+
+    await fn();
+
+    const end = new Date().getTime();
+
+    console.log(`${name} done in ${end - start}ms`);
+
+    return;
+  }
+}
+
+execution(require('minimist')(process.argv.slice(2)))
+  .compile();

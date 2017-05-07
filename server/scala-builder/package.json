@@ -1,0 +1,20 @@
+{
+  "name": "scala-builder",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/mantasindrasius/universal-react",
+  "author": "Mantas Indrašius <mantas@indrasius.lt>",
+  "license": "GPL-3.0",
+  "scripts": {
+    "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
+    "build": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 src/**",
+    "watch": "watchman src \"yarn build\""
+  },
+  "bin": {
+    "compile": "./scripts/compile.js"
+  },
+  "devDependencies": {
+    "child-process-promise": "^2.2.1",
+    "mkdirp": "^0.5.1"
+  }
+}
