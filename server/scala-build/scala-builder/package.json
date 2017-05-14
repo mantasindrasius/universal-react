@@ -1,5 +1,5 @@
 {
-  "name": "scala-build",
+  "name": "scala-builder",
   "version": "1.0.0",
   "main": "index.js",
   "repository": "https://github.com/mantasindrasius/universal-react",
@@ -11,7 +11,7 @@
     "watch": "watchman src \"yarn build\""
   },
   "bin": {
-    "compile": "./scripts/scala-build.js"
+    "scala-build": "./scripts/scala-build.js"
   },
   "devDependencies": {
     "child-process-promise": "^2.2.1",

@@ -18,6 +18,7 @@ function execution(args) {
   const depArgs = args['d'];
   const verbose = args['verbose'];
   const compiler = args['compiler'];
+  const useBuilder = args['use-builder'];
   const userDeps = ((depArgs && typeof(depArgs) === 'string') ? [depArgs] : depArgs) || [];
   const compileDepArtifacts = [
     `org.scala-lang:scala-compiler:${scalaVersion}`];
@@ -37,6 +38,39 @@ function execution(args) {
   }
 
   async function compile() {
+    if (useBuilder) {
+      return compileUsingBuilder();
+    }
+
+    return compileUsingCompiler();
+  }
+  
+  async function compileUsingBuilder() {
+    const homePath = path.resolve(__dirname, '..');
+
+    const compileClasspath = await libsFor(homePath, 'compile');
+    const userClasspath = await libsFor(homePath, 'user');
+    const scalaBuild = path.resolve(homePath, 'target/classes');
+
+    //const libsIndex = getFilesFromIndex(path.resolve(homePath, indexFilePath));
+
+    const commandArgs = [bootClasspathFor(compileClasspath.concat(userClasspath).concat([scalaBuild])), 'lt.indrasius.builder.ScalaBuilder']
+      .concat(sources);
+
+    await withExecutionTime('Build', () => execute('java', commandArgs));
+  }
+
+  async function libsFor(packagePath, name) {
+    const { dirPath, indexFilePath } = depsLibFor(name);
+    const resolvedFiles = await getFilesFromIndex(path.resolve(packagePath, indexFilePath));
+
+    //const compileClasspath = libsFor(path, 'compile');
+    //const userClasspath = libsFor(path, 'user');
+
+    return resolvedFiles.map((file) => path.resolve(packagePath, file));
+  }
+
+  async function compileUsingCompiler() {
     compileClasspath = await fetchBundleDeps('compile', {
       artifacts: compileDepArtifacts
     });
@@ -70,20 +104,19 @@ function execution(args) {
   }
   
   async function fetchBundleDeps(name, { artifacts }) {
-    const libsDir = `target/deps/${name}`;
-    const libsIndex = `${libsDir}/libs.json`;
+    const { dirPath, indexFilePath } = depsLibFor(name);
 
-    if (fs.existsSync(libsIndex)) {
-      return getFilesFromIndex(libsIndex);
+    if (fs.existsSync(indexFilePath)) {
+      return getFilesFromIndex(indexFilePath);
     }
 
     const deps = await fetchDeps({ artifacts });
 
-    mkdirp.sync(libsDir);
+    mkdirp.sync(dirPath);
 
-    const libs = await copyFilesTo(deps, libsDir);
+    const libs = await copyFilesTo(deps, dirPath);
 
-    writeIndexFile(libsIndex, artifacts, libs);
+    writeIndexFile(dirPath, artifacts, libs);
 
     return libs;
   }
@@ -93,6 +126,16 @@ function execution(args) {
       dependencies: artifacts,
       resolvedFiles: libs
     });
+  }
+
+  function depsLibFor(name) {
+    const dir = `target/deps/${name}`;
+    const indexFilePath = `${dir}/libs.json`;
+
+    return {
+      dir,
+      indexFilePath
+    };
   }
 
   async function getFilesFromIndex(indexPath) {

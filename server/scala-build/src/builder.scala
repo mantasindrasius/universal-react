@@ -128,7 +128,7 @@ class ScalaBuilder(deps: String*) {
   private def compileWithCompiler(sourceRootFile: File, outputDirFile: File): Unit = {
     val compiler = new MainClass()
 
-    compiler.process(Array("-usejavacp", "-d", outputDirFile.getAbsolutePath, sourceRootFile + "/GreeterSpec.scala"))
+    compiler.process(Array("-usejavacp", "-d", outputDirFile.getAbsolutePath, sourceRootFile.getAbsolutePath))
   }
 
   private def runTests(sourcesFile: File, targetClassesFile: File): Unit = {

@@ -7,10 +7,8 @@
   "license": "GPL-3.0",
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
-    "build-builder": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 builder/**",
-    "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist && ./scripts/compile --scala=2.12.2 builder/**",
-    "test": "./scripts/compile --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 src/**",
-    "watch-builder": "watchman builder \"yarn build-builder\"",
+    "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist",
+    "test": "../scala-build/scripts/scala-build --use-builder --verbose --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 src/**.scala",
     "watch": "watchman src \"yarn test\""
   },
   "dependencies": {
@@ -28,9 +26,7 @@
     "gulp-exec": "^2.1.3",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
-    "watchman": "^0.1.8"
-  },
-  "bin": {
-    "compile": "./scripts/compile.js"
+    "watchman": "^0.1.8",
+    "scala-build": "latest"
   }
 }
