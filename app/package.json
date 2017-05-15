@@ -6,8 +6,9 @@
   "author": "Mantas Indrašius <mantas@indrasius.lt>",
   "license": "GPL-3.0",
   "dependencies": {
-    "react": "^15.5.4",
-    "react-dom": "^15.5.4"
+    "react": "16.0.0-alpha.4",
+    "react-dom": "16.0.0-alpha.4",
+    "react-native": "^0.44.0"
   },
   "scripts": {
     "karma": "karma start --single-run",
