@@ -1,4 +1,4 @@
-const React = require('React');
+const React = require('react');
 //const ReactReconciler = require('react-dom/lib/ReactReconciler');
 const ReactFiberReconciler = require('react-dom/lib/ReactFiberReconciler');
 const expect = require('chai').expect;
