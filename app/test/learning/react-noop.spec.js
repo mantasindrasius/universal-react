@@ -16,7 +16,14 @@ describe('React', function() {
   it('render with reconciler', async() => {
     let rendered = await DummyReconcilerRenderer.render(ComponentUnderTest);
     
-    expect(rendered.type).to.equal('a');
+    console.log(rendered);
+
+    expect(rendered.type).to.equal('div');
+    expect(rendered.getState().isToggleOn).to.be.false;
+
+    rendered.clickAll();
+
+    expect(rendered.getState().isToggleOn).to.be.true;
   });
 });
 
@@ -71,16 +78,24 @@ const DummyReconcilerRenderer = new function() {
     result: []
   };
 
-  this.render = async (element) => {
-    //let element = new Component({});
+  this.render = async (Component) => {
+    let element = new Component({});
 
     rootContainer = DummyFiberReconciler.createContainer(container);
     
-    DummyFiberReconciler.updateContainer(<a>Hi</a>, rootContainer);
+    DummyFiberReconciler.updateContainer(element.render(), rootContainer);
 
     await waitDone();
+
+    element.updater = updater;
     
-    return container.result[0];
+    let result = container.result[0];
+
+    result.getState = function() {
+      return element.state;
+    };
+
+    return result;
   }
 
   this.unmountComponentAtNode = (container) => {
@@ -145,8 +160,21 @@ const DummyFiberReconciler = ReactFiberReconciler({
   createInstance(type, props, internalInstanceHandle) {
     console.log('createInstance', type, props, internalInstanceHandle);
 
+    let clickables = [];
+
+    for (let i = 0; i < props.children.length; i++) {
+      let child = props.children[i];
+
+      if (child.props && child.props.onClick) {
+        clickables.push(child.props.onClick);
+      }
+    }
+
     return {
-      type, props
+      type, props, clickables,
+      clickAll: () => {
+        clickables.forEach((clickable) => clickable());
+      }
     };
   },
 
@@ -162,12 +190,6 @@ const DummyFiberReconciler = ReactFiberReconciler({
 
   insertBefore(parentInstance, child, beforeChild) {
     console.log('insertBefore', parentInstance, child, beforeChild);
-    invariant(
-      child !== beforeChild,
-      'ReactART: Can not insert node before itself'
-    );
-
-    child.injectBefore(beforeChild);
   },
 
   prepareForCommit() {
@@ -200,7 +222,7 @@ const DummyFiberReconciler = ReactFiberReconciler({
 
   getChildHostContext() {
     console.log('getChildHostContext');
-    return null;
+    return emptyObject;
   },
 
   scheduleDeferredCallback(callback) {
@@ -237,13 +259,12 @@ const DummyRenderer = new function() {
   this.render = (Component) => {
     let props = {};
     let context = {};
-    let updater = this;
     let element = new Component(props);
 
     if (element.componentWillMount) element.componentWillMount();
 
     element.context = context;
-    element.updater = this;
+    element.updater = updater;
 
     let rendered = element.render();
 
@@ -258,13 +279,16 @@ const DummyRenderer = new function() {
   };
 
   this.unmountComponentAtNode = function(container) {
-  }
+  };
+}
 
-  this.enqueueSetState = function(element, newStateFn) {
+const updater = {
+  enqueueSetState(element, newStateFn) {
     let newState = newStateFn(element.state);
 
-    console.log('setState invoked');
+    console.log('setState invoked', newState);
 
     element.state = newState;
   }
-}
+};
+
