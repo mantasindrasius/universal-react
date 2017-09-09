@@ -53,7 +53,9 @@ function execution(args) {
 
     const compileClasspath = await libsFor(homePath, 'compile');
 
-    console.log(compileClasspath);
+    if (verbose) {
+      console.log(compileClasspath);
+    }
 
     // const testClasspath = await libsFor(homePath, 'test');
     const userClasspath = await libsFor(homePath, 'user');
