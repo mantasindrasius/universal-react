@@ -6,8 +6,11 @@ const mkdirp = require('mkdirp');
 const spawn = require('child-process-promise').spawn;
 const fs = require('fs-extra');
 const path = require('path');
+const glob = require('glob-promise');
+const _ = require('lodash');
 
 mkdirp.sync('target/classes');
+mkdirp.sync('target/test-classes');
 
 function execution(args) {
   const scalaVersion = args.scala || '2.12.2';
@@ -44,11 +47,15 @@ function execution(args) {
 
     return compileUsingCompiler();
   }
-  
+
   async function compileUsingBuilder() {
     const homePath = path.resolve(__dirname, '..');
 
     const compileClasspath = await libsFor(homePath, 'compile');
+
+    console.log(compileClasspath);
+
+    // const testClasspath = await libsFor(homePath, 'test');
     const userClasspath = await libsFor(homePath, 'user');
     const scalaBuild = path.resolve(homePath, 'target/classes');
 
@@ -71,6 +78,15 @@ function execution(args) {
   }
 
   async function compileUsingCompiler() {
+    const mainSources = await expandSources(sources);
+    const testSources = await expandTestSources(sources);
+
+    await compileSources(mainSources, 'target/classes', 'Main compile');
+    await compileSources(testSources, 'target/test-classes', 'Test compile', ['target/classes']);
+    await runTests();
+  }
+
+  async function compileSources(sources, output, stepName, extraClasspath = []) {
     compileClasspath = await fetchBundleDeps('compile', {
       artifacts: compileDepArtifacts
     });
@@ -79,15 +95,28 @@ function execution(args) {
       artifacts: userDeps
     });
 
-    const commandArgs = [bootClasspathFor(compileClasspath.concat(userClasspath)), 'scala.tools.nsc.Main', '-d', 'target/classes']
+    const commandArgs = [bootClasspathFor(compileClasspath.concat(userClasspath).concat(extraClasspath)), 'scala.tools.nsc.Main', '-d', output]
       .concat(sources);
-    
-    await withExecutionTime('Compilation', () => execute('java', commandArgs));
-    await runTests();
+
+    await withExecutionTime(stepName, () => execute('java', commandArgs))
+  }
+
+  async function expandTestSources(sources) {
+    return expandSources(sources, (file) => _.endsWith(file, 'Spec.scala'));
+  }
+
+  async function expandSources(sources, filter = (file) => !_.endsWith(file, 'Spec.scala')) {
+    return _.flatten(await Promise.all(sources.map((source) => expandSource(source, filter))));
+  }
+
+  async function expandSource(source, filter) {
+    const sourceFiles = await glob(source);
+
+    return sourceFiles.filter(filter);
   }
 
   async function runTests() {
-    const classpath = userClasspath.concat(['target/classes']);
+    const classpath = userClasspath.concat(['target/classes', 'target/test-classes']);
 
     if (verbose) {
       console.log(classpath);
@@ -102,9 +131,9 @@ function execution(args) {
   function bootClasspathFor(items) {
     return `-Xbootclasspath/a:${items.join(':')}`;
   }
-  
+
   async function fetchBundleDeps(name, { artifacts }) {
-    const { dirPath, indexFilePath } = depsLibFor(name);
+    const { dir, indexFilePath } = depsLibFor(name);
 
     if (fs.existsSync(indexFilePath)) {
       return getFilesFromIndex(indexFilePath);
@@ -112,11 +141,11 @@ function execution(args) {
 
     const deps = await fetchDeps({ artifacts });
 
-    mkdirp.sync(dirPath);
+    mkdirp.sync(dir);
 
-    const libs = await copyFilesTo(deps, dirPath);
+    const libs = await copyFilesTo(deps, dir);
 
-    writeIndexFile(dirPath, artifacts, libs);
+    writeIndexFile(indexFilePath, artifacts, libs);
 
     return libs;
   }
@@ -163,7 +192,7 @@ function execution(args) {
   async function fetchDeps({ artifacts }) {
     const command = ['fetch', '-r', 'https://oss.sonatype.org/content/repositories/releases', '-r', 'http://dl.bintray.com/scalaz/releases'].concat(artifacts);
     const collectedDeps = [];
-    
+
     await executeWithOutput('./bin/coursier', command, (data) => {
       collectedDeps.push(data.toString());
     });

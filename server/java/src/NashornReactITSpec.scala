@@ -12,7 +12,7 @@ class NashornReactITSpec extends Specification {
   val nashornScriptEngineFactory = new NashornScriptEngineFactory()
   lazy val nashorn = {
       val engine = nashornScriptEngineFactory.getScriptEngine("--language=es6")
-      engine.loadScript("classpath:jvm-npm.js")
+      engine.loadScript("node_modules/jvm-npm/src/main/javascript/jvm-npm.js")
       engine.loadScript("node_modules/nashorn-polyfill/dist/nashorn-polyfill.js")
       engine.require("babel-standalone")
 
@@ -37,7 +37,7 @@ class NashornReactITSpec extends Specification {
     def loadResourceScript(name: String) = {
       loadScript(getClass.getClassLoader.getResource(s"${name}.js").toURI.getPath)
     }
-    
+
     def loadScript(fullPath: String) = {
       engine.eval(s"load('$fullPath')")
     }
@@ -52,7 +52,7 @@ class NashornReactITSpec extends Specification {
 
       engine.eval(s"""load({script:$escapedSource,name:"$fullPath"})""")
     }
-    
+
     def require(name: String) = {
       engine.eval(s"require('$name')")
     }
