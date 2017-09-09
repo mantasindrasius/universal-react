@@ -2,6 +2,7 @@ package lt.indrasius.builder
 
 import org.specs2.mutable.Spec
 import org.specs2.specification.Scope
+import org.specs2.matcher.ThrownExpectations
 import scala.tools.nsc.{GenericRunnerSettings, MainClass}
 import scala.tools.nsc.interpreter.IMain
 import coursier._
@@ -15,16 +16,24 @@ import java.net.{URLClassLoader, URL}
 import scopt.OptionDef
 import com.twitter.io.TempDirectory
 
-class ScalaBuilderSpec extends Spec {
-  lazy val builder = new ScalaBuilder(
+class ScalaBuilderSpec extends Spec with ThrownExpectations {
+  lazy val builder = new ScalaBuilder(ScalaBuilderOptions(deps = Seq(
     "org.scala-lang:scala-library:2.12.2",
-    "org.specs2:specs2-core_2.12:3.8.9")
+    "org.specs2:specs2-core_2.12:3.8.9")))
 
   "Builder" should {
     "build and run tests" in {
       val outputDir = TempDirectory.create()
 
       builder.compile(outputDir, "test/example-apps/greeter-app")
+
+      1 must_== 1
+    }
+
+    "build and run tests on a wild-card pattern" in {
+      val outputDir = TempDirectory.create()
+
+      builder.compile(outputDir, "test/example-apps/greeter-app/**.scala")
 
       1 must_== 1
     }

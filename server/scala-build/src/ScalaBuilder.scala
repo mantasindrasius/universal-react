@@ -13,12 +13,15 @@ import java.nio.file.{Files, Paths}
 import java.lang.Package
 import java.net.{URLClassLoader, URL}
 import scopt.OptionDef
+import java.nio.file.{FileSystems, Paths, Path, FileVisitResult, SimpleFileVisitor}
+import java.nio.file.attribute.BasicFileAttributes
+import java.io.IOException
 
 object ScalaBuilder {
   def main(args: Array[String]): Unit = {
     val options = ScalaBuilderOptions.parse(args)
 
-    new ScalaBuilder(options.deps:_*)
+    new ScalaBuilder(options)
       .build(options.sources:_*)
   }
 }
@@ -34,6 +37,10 @@ object ScalaBuilderOptions {
     opt[Seq[String]]('d', "dependency").unbounded.action { (deps, c) =>
       c.copy(deps = c.deps ++ deps)
     }
+
+    opt[Unit]('w', "watch").action { (deps, c) =>
+      c.copy(watch = true)
+    }
   }
 
   def parse(args: Array[String]): ScalaBuilderOptions =
@@ -41,9 +48,12 @@ object ScalaBuilderOptions {
 }
 
 case class ScalaBuilderOptions(sources: Seq[String] = Nil,
-                               deps: Seq[String] = Nil)
+                               deps: Seq[String] = Nil,
+                               watch: Boolean = false)
 
-class ScalaBuilder(deps: String*) {
+class ScalaBuilder(options: ScalaBuilderOptions) {
+  private val deps = options.deps
+
   private lazy val classpath: String = {
     val depResolver = new DepResolver
 
@@ -57,14 +67,17 @@ class ScalaBuilder(deps: String*) {
     runTests(new File("."), outputDirFile)
   }
 
-  def compile(outputDirFile: File, sources: String*): Unit = {
-    val sourceFiles = listOfSourceFiles(sources)
+  def compile(outputDirFile: File, sources: String*): Unit =
+    listOfSourceFiles(sources) match {
+      case Nil =>
+        println(s"Couldn't find sources for ${sources.mkString(", ")}")
+      case sourceFiles =>
 
-    outputDirFile.mkdirs()
+        outputDirFile.mkdirs()
 
-    //compileWithInterpreter(sourceRootFile, sourceFiles, outputDirFile)
-    compileWithCompiler(sourceFiles, outputDirFile)
-  }
+        //compileWithInterpreter(sourceRootFile, sourceFiles, outputDirFile)
+        compileWithCompiler(sourceFiles, outputDirFile)
+    }
 
   private def compileWithInterpreter(sourceRootFile: File, sourceFiles: Seq[SourceFile], outputDirFile: File): Unit = {
     val interpreter = createInterpreter(outputDirFile)
@@ -121,15 +134,42 @@ class ScalaBuilder(deps: String*) {
     new IMain(settings)
   }
 
-  private def listOfSourceFiles(dirs: Seq[String]): List[File] = {
-    dirs.toList.flatMap(dir => {
-      val d = new File(dir)
+  private def listOfSourceFiles(sources: Seq[String]): List[File] =
+    expandSources(sources).toList.flatMap(source => {
+      val d = new File(source)
+
       if (d.exists && d.isDirectory) {
           d.listFiles.filter(_.isFile).toList
       } else {
           List[File](d).filter(_.isFile)
       }
     })
+
+  private def expandSources(sources: Seq[String]) =
+    sources.flatMap {
+      case source if new File(source).exists() => Seq(source)
+      case source => expandSource(source)
+    }
+
+  private def expandSource(source: String): Seq[String] = {
+    val matcher = FileSystems.getDefault().getPathMatcher(s"glob:$source")
+    val files = Seq.newBuilder[String]
+
+    Files.walkFileTree(Paths.get(""), new SimpleFileVisitor[Path]() {
+      override def visitFile(file: Path, attrs: BasicFileAttributes) = {
+        if (matcher.matches(file)) {
+          files += file.toString
+        }
+
+        FileVisitResult.CONTINUE
+      }
+
+      override def visitFileFailed(file: Path, exc: IOException) = {
+        FileVisitResult.CONTINUE
+      }
+    });
+
+    files.result
   }
 
   private def toSourceFile(file: File): SourceFile = {

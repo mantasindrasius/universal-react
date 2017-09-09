@@ -8,7 +8,8 @@
   "scripts": {
     "setup": "mkdir bin && curl -L -o bin/coursier https://git.io/vgvpD && chmod +x bin/coursier",
     "build": "node node_modules/gulp/bin/gulp.js --cwd node_modules/nashorn-polyfill/ scripts:dist",
-    "test": "../scala-build/scripts/scala-build --use-builder --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 src/**.scala",
+    "test": "../scala-build/scripts/scala-build --use-builder --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 \"src/**.scala\"",
+    "dev": "../scala-build/scripts/scala-build --use-builder --scala=2.12.2 --with-specs2=3.8.9 -d org.bsc:jvm-npm-core:1.0.0 -w \"src/**.scala\"",
     "watch": "watchman src \"yarn test\""
   },
   "dependencies": {

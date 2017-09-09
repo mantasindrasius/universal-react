@@ -18,6 +18,7 @@ function execution(args) {
   const specs2Artifact = args['with-specs2'] ? `org.specs2:specs2-core_${scalaDepSuffix}:${args['with-specs2']}` : '';
 
   const sources = args['_'] || [];
+
   const depArgs = args['d'];
   const verbose = args['verbose'];
   const compiler = args['compiler'];
