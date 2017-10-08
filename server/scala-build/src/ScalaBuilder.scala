@@ -15,14 +15,24 @@ import java.net.{URLClassLoader, URL}
 import scopt.OptionDef
 import java.nio.file.{FileSystems, Paths, Path, FileVisitResult, SimpleFileVisitor}
 import java.nio.file.attribute.BasicFileAttributes
-import java.io.IOException
+import java.io.{IOException}
+import scala.io.Source
 
 object ScalaBuilder {
   def main(args: Array[String]): Unit = {
     val options = ScalaBuilderOptions.parse(args)
+    val builder = new ScalaBuilder(options)
 
-    new ScalaBuilder(options)
-      .build(options.sources:_*)
+    builder.build(options.sources:_*)
+
+    if (options.commands) {
+      val lines = Source.fromInputStream(System.in).getLines
+
+      lines.foreach(line => {
+        println("Re-build due to source change")
+        builder.build(options.sources:_*)
+      })
+    }
   }
 }
 
@@ -38,8 +48,8 @@ object ScalaBuilderOptions {
       c.copy(deps = c.deps ++ deps)
     }
 
-    opt[Unit]('w', "watch").action { (deps, c) =>
-      c.copy(watch = true)
+    opt[Unit]("commands").action { (deps, c) =>
+      c.copy(commands = true)
     }
   }
 
@@ -49,7 +59,7 @@ object ScalaBuilderOptions {
 
 case class ScalaBuilderOptions(sources: Seq[String] = Nil,
                                deps: Seq[String] = Nil,
-                               watch: Boolean = false)
+                               commands: Boolean = false)
 
 class ScalaBuilder(options: ScalaBuilderOptions) {
   private val deps = options.deps
@@ -63,8 +73,8 @@ class ScalaBuilder(options: ScalaBuilderOptions) {
   def build(sources: String*): Unit = {
     val outputDirFile = new File(new File(".").getParentFile, s"target/classes")
 
-    compile(outputDirFile, sources:_*)
-    runTests(new File("."), outputDirFile)
+    withExecutionTime("Compile", compile(outputDirFile, sources:_*))
+    withExecutionTime("Tests", runTests(new File("."), outputDirFile))
   }
 
   def compile(outputDirFile: File, sources: String*): Unit =
@@ -178,6 +188,14 @@ class ScalaBuilder(options: ScalaBuilderOptions) {
     val content = new String(Files.readAllBytes(Paths.get(fileDir, filename)))
 
     new BatchSourceFile(new VirtualFile(filename, fileDir), content.toCharArray)
+  }
+
+  private def withExecutionTime(name: String, getValue: => Unit) = {
+    val start = System.currentTimeMillis
+
+    getValue
+
+    println(s"$name took ${System.currentTimeMillis - start}ms")
   }
 }
 

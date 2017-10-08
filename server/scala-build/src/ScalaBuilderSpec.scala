@@ -2,7 +2,8 @@ package lt.indrasius.builder
 
 import org.specs2.mutable.Spec
 import org.specs2.specification.Scope
-import org.specs2.matcher.ThrownExpectations
+import org.specs2.matcher._
+import org.specs2.matcher.Matchers._
 import scala.tools.nsc.{GenericRunnerSettings, MainClass}
 import scala.tools.nsc.interpreter.IMain
 import coursier._
@@ -27,7 +28,7 @@ class ScalaBuilderSpec extends Spec with ThrownExpectations {
 
       builder.compile(outputDir, "test/example-apps/greeter-app")
 
-      1 must_== 1
+      outputDir must containFiles
     }
 
     "build and run tests on a wild-card pattern" in {
@@ -35,9 +36,12 @@ class ScalaBuilderSpec extends Spec with ThrownExpectations {
 
       builder.compile(outputDir, "test/example-apps/greeter-app/**.scala")
 
-      1 must_== 1
+      outputDir must containFiles
     }
   }
+
+  private def containFiles: Matcher[File] =
+    not(empty) ^^ { dir: File => Option(dir.listFiles).toSeq.flatten }
 }
 
 class ScalaBuilderOptionsSpec extends Spec {
